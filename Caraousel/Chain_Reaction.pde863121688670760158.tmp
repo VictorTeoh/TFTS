@@ -1,0 +1,80 @@
+int value = 0;
+int i = 0;
+Ball[] balls;  
+
+
+void setup(){
+  size(1000, 1000);
+  smooth();
+  frameRate(60);
+  balls = new Ball[11];
+  for(int i = 0; i < 10; i++){
+    balls[i] = new Ball();
+    balls[i].setcolor(222, 222, 249);
+    balls[i].sethbox(createShape(ELLIPSE, 130, 130, 80, 80)); // 55
+    balls[i].setvisbox(createShape(ELLIPSE, 130, 130, 80, 80));
+    balls[i].setposition(0,0);
+    balls[i].setw(radians(i*36));
+    balls[i].setdw(PI/900);
+  }
+  for(int i = 10; i < 11; i++){
+    //find a way to set speed to 0 
+    balls[i] = new Ball();
+    balls[i].setcolor(0, 0, 255);
+    balls[i].sethbox(createShape(ELLIPSE, 0, 0, 25, 25));
+    balls[i].setvisbox(createShape(ELLIPSE,0, 0, 30, 30));
+    balls[i].setposition(0,0);
+  }
+//30 90 25 best case
+}
+
+void drawcircles(){
+  if(value == 255){
+  balls[10].setspeed(1.9);
+  followthemouse();
+}
+  for(Ball b : balls){
+    pushMatrix();
+    b.move();
+    b.drawme(); 
+    popMatrix();
+  }
+}
+/*
+void collisions(){
+  for(Ball b : balls){
+     for(Ball a : balls){
+       b.collisioncheck(a);
+     }
+  }
+}
+*/
+
+void followthemouse(){
+  for( int i = 10; i < 11; i++){
+    
+  balls[i].movetowards(mouseX,mouseY);
+  }
+  println(mouseX,mouseY);
+}
+
+void draw()
+{
+  background(255);
+  //
+  pushMatrix();
+  //translate(width/2, height/2); // place robot so arms are always on screen
+  
+  drawcircles();
+//  collisions();
+  popMatrix();
+   
+}
+
+void mousePressed() {
+  if (value == 0) {
+    value = 255;
+  } else {
+    value = 0;
+  }
+}
