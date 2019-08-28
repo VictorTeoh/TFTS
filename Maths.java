@@ -69,10 +69,9 @@ public class Maths{
 	}
 	
 
-	public static void lowestavgmoneytohit2(double startinglvl, double tiertarget, double numtaken, double desirednum, double otherssametiertaken){
+	public static double lowestavgmoneytohit2(double startinglvl, double tiertarget, double numtaken, double desirednum, double otherssametiertaken){
 		double num0 = 0.0; double num1 = 0.0; double num2 = 0.0; double num3 = 0.0; double avgmoneyspent; double rolls = 0; double comp; int i = 0; double sd = 0;
 		double purchasecost = desirednum*tiertarget;
-		double takenreduc = (copiespertier[(int)(tiertarget-1.0)] - numtaken) / copiespertier[(int)(tiertarget-1.0)];
 		while (i < desirednum){
 			num0 += geometricmean(rollchanceget(tiertarget,startinglvl) * copypenalty(tiertarget, (numtaken+i), otherssametiertaken));
 			sd += geometricSD(geometricmean(num0))/(minionsperpage/priceofroll);
@@ -100,7 +99,8 @@ public class Maths{
 		while (i < desirednum){
 			num2 += geometricmean(rollchanceget(tiertarget,startinglvl+2) * copypenalty(tiertarget, (numtaken+i), otherssametiertaken));
 			sd += geometricSD(geometricmean(num2))/(minionsperpage/priceofroll);
-			i++;		}
+			i++;		
+		}
 		rolls = num2/minionsperpage;
 		avgmoneyspent = moneyNeededtoLvl(startinglvl) + moneyNeededtoLvl(startinglvl+1) + purchasecost;
 		num2 = avgmoneyspent + (rolls*priceofroll);
@@ -121,21 +121,72 @@ public class Maths{
 		//rolls = 0; i = 0; sd = 0;
 		comp = smallest(num0, num1, num2, num3);
 		System.out.println(comp + " Is the best case");
-
+		return comp;
 	}
 
 	//this method does not value the cost of a unit slot
-	public static void bkpntlvlorroll(double startinglvl, double tiertarget){
+	public static boolean bkpntlvlorroll(double startinglvl, double tiertarget){
 		if(startinglvl>(rollchancearrarr[0].length+1.0)){
-			return;
+			return false;
 		}
 		double percentinc = (rollchanceget(tiertarget,startinglvl+1)/rollchanceget(tiertarget,startinglvl)) - 1.0;
 		if(percentinc <= 0.0){
 			System.out.println("Rolling is better always");
-			return;
+			return false;
 		}
 		double breakpointmoney = (int)(moneyNeededtoLvl(startinglvl)/moneytoexp) / (percentinc/(percentinc+1.0));
 		System.out.println("Leveling is better after " + breakpointmoney + " money spent");
+		return true;
+	}
+
+	public static boolean bkpntlvlorrolltextless(double startinglvl, double tiertarget){
+		if(startinglvl>(rollchancearrarr[0].length+1.0)){
+			return false;
+		}
+		double percentinc = (rollchanceget(tiertarget,startinglvl+1)/rollchanceget(tiertarget,startinglvl)) - 1.0;
+		if(percentinc <= 0.0){
+			return false;
+		}
+		return true;
+	}
+
+	//percent increase of getting something after buying things of the same tier
+	public static void buygarbage(double tiertarget, double numtaken, double otherssametiertaken, double garbage){
+		double i; double i1;
+		i = copypenalty(tiertarget,0,otherssametiertaken);
+		i1 = copypenalty(tiertarget,numtaken,otherssametiertaken);
+		System.out.println("Percent increase is " + (((i1-i)/i)*100));
+	}
+
+	public static void buybeforestolen(double startinglvl, double tiertarget, double numtaken, double desirednum, double otherssametiertaken){
+		double num0 = 0.0; double num1 = 0.0; double avgmoneyspent; double rolls = 0; double comp; int i = 0; int i2 = 0; double sd = 0;
+		double purchasecost = desirednum*tiertarget;
+		while (i < desirednum){
+			num0 += geometricmean(rollchanceget(tiertarget,startinglvl) * copypenalty(tiertarget, (numtaken+i), otherssametiertaken));
+			i++;
+		}
+		rolls = num0/minionsperpage;
+		avgmoneyspent = rolls * priceofroll + purchasecost;
+		num0 = avgmoneyspent;
+		System.out.println("Average money needed straight rolling at level " + startinglvl + " is " + num0);
+		rolls = 0; i = 0; sd = 0;
+
+		while(num1 < num0 && bkpntlvlorrolltextless(startinglvl, tiertarget)){
+			while (i < desirednum && bkpntlvlorrolltextless(startinglvl, tiertarget)){
+				num1 += geometricmean(rollchanceget(tiertarget,startinglvl+1) * copypenalty(tiertarget, (numtaken+i+i2), otherssametiertaken));
+				i++;
+			}
+			rolls = num1/minionsperpage;
+			avgmoneyspent = moneyNeededtoLvl(startinglvl) + purchasecost;
+			num1 = (rolls*priceofroll);
+			i2++;
+			i = 0;
+		}
+		if(i2 == 0){
+			System.out.println("Just roll");
+			return;
+		}
+		System.out.println("Rolling immediately would cost " + num0 + " and " + i2 + " more have to be taken for leveling to be equal for " + num1);
 	}
 
 	public static void besthitmutiple (double startinglvl, double money){
@@ -145,92 +196,14 @@ public class Maths{
 	public static void main(String[] args){
 
 	//	costefficienttohit(6, 100, 4, 0);
-	/*	double i = avghits(0.001);
-		System.out.println(i);*/
+/*
+		buygarbage(1,9,90,8);//.235
+		buygarbage(2,0,0,10);//.32
+		buygarbage(3,0,0,10);//.4
+		buygarbage(4,0,0,10);//.87
+		buygarbage(5,1,0,0);//1.7
 		lowestavgmoneytohit2(6, 4, 0, 2, 0);
+		*/
+		buybeforestolen(6,4,2,2,4);
 	}
-
-	/* These are vast underestimates using bad napkin math
-	public static double avghits(double number){
-		double i;
-		if(number == 0.0){return 0.0;}
-		i = Math.pow(number, -1);
-		return logbasex(i, 2.0);
-	}
-
-	public static void costefficienttohit(double startinglvl, double money, double tiertarget, double numtaken){
-		double num0; double comp; double budget; double effmoney;
-		double num1 = 1.0; double num2 = 1.0; double num3 = 1.0;
-		double takenreduc = (copiespertier[(int)(tiertarget-1.0)] - numtaken) / copiespertier[(int)(tiertarget-1.0)];//does not accurately account for the last couple of a small copy pool
-		num0 = Math.pow(1.0 - ((rollchancearrarr[(int)(tiertarget-1.0)][(int)(startinglvl-1.0)] / unitspertier[(int)(tiertarget-1.0)] * takenreduc)),	Math.floor(money*5/priceofroll));
-		System.out.println("Straight rolling chance " + num0);
-		budget = moneyNeededtoLvl(startinglvl);
-		if(money > budget){
-			effmoney = money - budget;
-			num1 = Math.pow(1.0 - (rollchancearrarr[(int)(tiertarget-1.0)][(int)(startinglvl)] / unitspertier[(int)(tiertarget-1.0)]),	Math.floor(effmoney*5/priceofroll));
-			System.out.println("Straight rolling chance after 1 lvl " + num1);
-		}
-		budget += moneyNeededtoLvl(startinglvl+1.0);
-		if(money > budget){
-			effmoney = money - budget;
-			num2 = Math.pow(1.0 - (rollchancearrarr[(int)(tiertarget-1.0)][(int)(startinglvl+1.0)] / unitspertier[(int)(tiertarget-1.0)]),	Math.floor(effmoney*5/priceofroll));
-			System.out.println("Straight rolling chance after 2 lvl " + num2);
-		}
-		budget += moneyNeededtoLvl(startinglvl+2.0);
-		if(money > budget){
-			effmoney = money - budget;
-			num3 = Math.pow(1.0 - (rollchancearrarr[(int)(tiertarget-1.0)][(int)(startinglvl+2.0)] / unitspertier[(int)(tiertarget-1.0)]),	Math.floor(effmoney*5/priceofroll));
-			System.out.println("Straight rolling chance after 3 lvl " + num3);
-		}
-		comp = smallest(num0, num1, num2, num3);
-		System.out.println(comp + " is the most cost efficient method");
-
-	}
-
-	public static void lowestavgmoneytohit(double startinglvl, double tiertarget, double numtaken, double desirednum){
-		double num0 = 0.0; double num1 = 0.0; double num2 = 0.0; double num3 = 0.0; double avgmoneyspent; int rolls = 0; double comp;
-		double purchasecost = desirednum*tiertarget;
-		double takenreduc = (copiespertier[(int)(tiertarget-1.0)] - numtaken - (desirednum/2)) / copiespertier[(int)(tiertarget-1.0)];//does not accurately account for the last couple of a small copy pool
-		if (takenreduc<0){return;}
-		while(avghits(num0)<desirednum){
-			rolls += 1;
-			num0 = Math.pow(1.0 - ((rollchancearrarr[(int)(tiertarget-1.0)][(int)(startinglvl-1.0)] / unitspertier[(int)(tiertarget-1.0)] * takenreduc)),	5*rolls);
-			//System.out.println(num0);
-		}
-
-		avgmoneyspent = rolls * 2 + purchasecost;
-		num0 = avgmoneyspent;
-		System.out.println("Average money needed straight rolling " + avgmoneyspent);
-		rolls = 0;
-
-		while(avghits(num1)<desirednum){
-			rolls += 1;
-			num1 = Math.pow(1.0 - ((rollchancearrarr[(int)(tiertarget-1.0)][(int)startinglvl] / unitspertier[(int)(tiertarget-1.0)] * takenreduc)),	5*rolls);
-		}
-		avgmoneyspent = rolls * 2 + moneyNeededtoLvl(startinglvl) + purchasecost;
-		num1 = avgmoneyspent;
-		System.out.println("Average money needed needed after 1 lvl " + avgmoneyspent + " with " + (avgmoneyspent-(rolls*2)) + " money for leveling");
-		rolls = 0;
-		
-		while(startinglvl+1.0 < exptolvlarr.length && avghits(num2)<desirednum){
-			rolls += 1;
-			num2 = Math.pow(1.0 - ((rollchancearrarr[(int)(tiertarget-1.0)][(int)(startinglvl+1.0)] / unitspertier[(int)(tiertarget-1.0)] * takenreduc)),	5*rolls);
-		}
-		avgmoneyspent = rolls * 2 + moneyNeededtoLvl(startinglvl) + moneyNeededtoLvl(startinglvl+1) + purchasecost;
-		num2 = avgmoneyspent;
-		System.out.println("Average money needed needed after 2 lvl " + avgmoneyspent + " with " + (avgmoneyspent-(rolls*2)) + " money for leveling");
-		rolls = 0;
-		
-		while(startinglvl+2.0 < exptolvlarr.length && avghits(num3)<desirednum){
-			rolls += 1;
-			num3 = Math.pow(1.0 - ((rollchancearrarr[(int)(tiertarget-1.0)][(int)(startinglvl+2.0)] / unitspertier[(int)(tiertarget-1.0)] * takenreduc)),	5*rolls);
-		}
-		avgmoneyspent = rolls*2 + moneyNeededtoLvl(startinglvl)+ moneyNeededtoLvl(startinglvl+1)+moneyNeededtoLvl(startinglvl+2) + purchasecost;
-		num3 = avgmoneyspent;
-		System.out.println("Average money needed rolling after 3 lvl " + avgmoneyspent + " with " + (avgmoneyspent-(rolls*2)) + " money for leveling");
-		comp = smallest(num0, num1, num2, num3);
-		System.out.println(comp + " Is the best case");
-
-	}
-	*/
 }
